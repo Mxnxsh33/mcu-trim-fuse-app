@@ -1,0 +1,34 @@
+setup,k,key,within_1_%,mae_codes,exact_%
+A+B + k MCU-C dies (transfer),10,bg,99.82125,0.21275,78.89125
+A+B + k MCU-C dies (transfer),10,hsi,76.36625000000001,0.9552499999999999,34.53
+A+B + k MCU-C dies (transfer),10,ldo,100.0,0.10475,89.51875
+A+B + k MCU-C dies (transfer),25,bg,99.85,0.2015,80.0175
+A+B + k MCU-C dies (transfer),25,hsi,76.0675,0.9698749999999999,32.0375
+A+B + k MCU-C dies (transfer),25,ldo,100.0,0.107125,89.28125
+A+B + k MCU-C dies (transfer),50,bg,99.61375,0.212625,79.1275
+A+B + k MCU-C dies (transfer),50,hsi,75.14874999999999,0.975625,32.59875
+A+B + k MCU-C dies (transfer),50,ldo,100.0,0.10425,89.5775
+A+B + k MCU-C dies (transfer),100,bg,99.64500000000001,0.20025,80.345
+A+B + k MCU-C dies (transfer),100,hsi,76.75,0.93875,34.055
+A+B + k MCU-C dies (transfer),100,ldo,100.0,0.105,89.52
+A+B + k MCU-C dies (transfer),421,bg,100.0,0.16249999999999998,83.72999999999999
+A+B + k MCU-C dies (transfer),421,hsi,79.1,0.815,42.28
+A+B + k MCU-C dies (transfer),421,ldo,100.0,0.10200000000000001,89.785
+A+B only (zero-shot),0,bg,99.88,0.181,82.07
+A+B only (zero-shot),0,hsi,78.505,0.8714999999999999,40.735
+A+B only (zero-shot),0,ldo,100.0,0.107,89.31
+k MCU-C dies only (from scratch),10,bg,99.49625,0.31,69.5675
+k MCU-C dies only (from scratch),10,hsi,67.57875,1.165125,25.20875
+k MCU-C dies only (from scratch),10,ldo,100.0,0.153375,84.64875
+k MCU-C dies only (from scratch),25,bg,99.25875,0.308625,69.8625
+k MCU-C dies only (from scratch),25,hsi,70.1,1.095125,27.435
+k MCU-C dies only (from scratch),25,ldo,100.0,0.13525,86.49
+k MCU-C dies only (from scratch),50,bg,98.99125000000001,0.32525,68.6175
+k MCU-C dies only (from scratch),50,hsi,72.62375,1.041,28.68375
+k MCU-C dies only (from scratch),50,ldo,100.0,0.12475,87.53125
+k MCU-C dies only (from scratch),100,bg,96.4975,0.29825,73.78375
+k MCU-C dies only (from scratch),100,hsi,72.3575,1.0434999999999999,29.99
+k MCU-C dies only (from scratch),100,ldo,100.0,0.13425,86.57875
+physics formula only,0,bg,99.64500000000001,0.247,75.65
+physics formula only,0,hsi,69.475,1.1295000000000002,23.635
+physics formula only,0,ldo,100.0,0.126,87.41
