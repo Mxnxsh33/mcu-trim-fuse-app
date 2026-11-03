@@ -16,7 +16,7 @@ import os
 import re
 from pathlib import Path
 
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 DEFAULT_MODEL = "claude-haiku-5-5"   # small/fast model; override with ANTHROPIC_MODEL
@@ -33,7 +33,7 @@ RULES
 - Never invent numbers. Quote results exactly as written in the notes. Always be honest about limitations (for example HSI accuracy drops on new lots).
 - Stay on topic: this project, the chip-trimming concepts needed to understand it, and the machine-learning ideas it uses. Politely decline unrelated requests.
 - You only explain. You cannot change the model, run predictions or access files.
-- Keep answers short (under about 200 words) unless the user asks for more detail. Use short paragraphs or bullets.
+{style}
 
 === PROJECT NOTES ===
 {kb}
@@ -78,30 +78,56 @@ def is_current_die_question(q):
     return bool(CURRENT_DIE_PATTERNS.search(q))
 
 
+EXTRA_STOP = {"mean", "means", "does", "do", "tell", "explain", "know", "work", "works", "used", "use", "using", "happen",
+              "happens", "thing", "things", "just", "really", "please", "someone", "anyone", "need", "needs"}
+SYNONYMS = {  # words people use -> words the notes use (applied to the question only)
+    r"\bai\b|artificial intelligence": "machine learning model program",
+    r"chat ?gpt|\bgpt\b|chat ?bots?|\bbots?\b|llms?": "llm language model assistant",
+    r"saving|savings|benefit|advantage|gain\b|faster|cheaper": "benefit time cost saving",
+    r"wrong|mistake|error|incorrect|broken": "mistake wrong error",
+    r"adjusted|adjust|adjustment|tuned|tune\b|tuning": "trimming tuning adjustment",
+    r"numbers|results|score|performance|good is": "accurate predictions results",
+    r"trust|reliable|reliability|safe to rely|rely": "confidence accurate trust verify tester",
+    r"colou?rs?|traffic light|red light|green light": "confidence meter green amber red advisors",
+    r"forever|irreversible|permanent": "fuse permanent ink",
+    r"\bfake\b|\breal\b": "synthetic real simulator",
+}
+
+
 class OfflineAnswerer:
-    """TF-IDF search over the notes. Simple, fast, no internet."""
+    """Search over the notes without any internet: word TF-IDF + letter-pattern TF-IDF + simple synonyms."""
 
     def __init__(self, kb):
         self.chunks = split_chunks(kb)
-        self.vec = TfidfVectorizer(ngram_range=(1, 2), stop_words="english", sublinear_tf=True)
+        stop = list(ENGLISH_STOP_WORDS | EXTRA_STOP)
+        self.vec = TfidfVectorizer(ngram_range=(1, 2), stop_words=stop, sublinear_tf=True)
+        self.cvec = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True)
         # headings are weighted by repeating them, so "why random forest" finds the right section
-        self.matrix = self.vec.fit_transform([f"{t} {t} {t} {x}" for t, x in self.chunks])
+        docs = [f"{t} {t} {t} {x}" for t, x in self.chunks]
+        self.matrix = self.vec.fit_transform(docs)
+        self.cmatrix = self.cvec.fit_transform(docs)
+
+    @staticmethod
+    def _expand(question):
+        extra = [words for pattern, words in SYNONYMS.items() if re.search(pattern, question, flags=re.I)]
+        return question + " " + " ".join(extra)
 
     def answer(self, question, current_summary=None):
         footer = "\n\n_Offline mode: answered straight from the project notes. Connect an API key for free-form answers._"
         if current_summary and is_current_die_question(question):
             return current_summary + footer
-        question = re.sub(r"\b(chat ?bots?|bots?|llms?)\b", "assistant llm", question, flags=re.I)   # users say chatbot, notes say assistant
-        sims = cosine_similarity(self.vec.transform([question]), self.matrix).ravel()
+        q = self._expand(question)
+        sims = (0.6 * cosine_similarity(self.vec.transform([q]), self.matrix).ravel()
+                + 0.4 * cosine_similarity(self.cvec.transform([q]), self.cmatrix).ravel())
         order = sims.argsort()[::-1]
         best = order[0]
-        if sims[best] < 0.06:
-            topics = ", ".join(f"*{self.chunks[i][0]}*" for i in range(0, len(self.chunks), max(1, len(self.chunks) // 5))[:5])
+        if sims[best] < 0.07:
+            topics = ", ".join(f"*{self.chunks[i][0]}*" for i in list(range(0, len(self.chunks), max(1, len(self.chunks) // 5)))[:5])
             return ("I could not find that in the project notes. Try asking about the model choice, the data, "
                     f"the results, the limitations or the interview questions (for example {topics})." + footer)
         parts = [f"**{self.chunks[best][0]}**\n\n{self.chunks[best][1]}"]
         second = order[1]
-        if sims[second] >= 0.7 * sims[best] and sims[second] >= 0.1:
+        if sims[second] >= 0.8 * sims[best] and sims[second] >= 0.12:
             parts.append(f"**{self.chunks[second][0]}**\n\n{self.chunks[second][1]}")
         return "\n\n---\n\n".join(parts) + footer
 
@@ -117,8 +143,17 @@ def llm_available():
         return False
 
 
-def build_system_prompt(kb, current_context):
-    return SYSTEM_TEMPLATE.format(kb=kb, ctx=current_context or "(no die entered yet)")
+STYLE_SIMPLE = ("- READING LEVEL: SIMPLE. The reader is a complete beginner with no chip or machine-learning background. "
+                "Use everyday words and one short comparison from daily life (cooking, tuning a guitar, school exams). "
+                "Avoid jargon; if a technical word is unavoidable, explain it in brackets straight away. No formulas. "
+                "Keep answers under about 150 words, in short paragraphs.")
+STYLE_DETAILED = ("- READING LEVEL: DETAILED. The reader wants the technical explanation. Be precise and include the relevant numbers "
+                  "from the notes. Keep answers under about 200 words unless asked for more. Use short paragraphs or bullets.")
+
+
+def build_system_prompt(kb, current_context, level="detailed"):
+    style = STYLE_SIMPLE if level == "simple" else STYLE_DETAILED
+    return SYSTEM_TEMPLATE.format(kb=kb, ctx=current_context or "(no die entered yet)", style=style)
 
 
 def clean_history(history):

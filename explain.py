@@ -182,3 +182,27 @@ def explain_prediction(row, result, cfg, card):
         "- **Within ±1 code:** the prediction is at most one step away from the best code. This is the main accuracy measure."
     )
     return {"short": short, "inputs": inputs, "outputs": outputs, "sure": sure, "glossary": glossary}
+
+
+def simple_summary(row, result, cfg):
+    """Beginner-friendly summary of the current die (used by the assistant in Simple mode)."""
+    codes = {k: int(result[f"{k}_trim_code"]) for k in TARGET}
+    def clicks(k):
+        n = codes[k] - CENTRE[k]
+        return "no clicks (it stays at the middle position)" if n == 0 else f"{abs(n)} click{'s' if abs(n) != 1 else ''} {'up' if n > 0 else 'down'} from the middle"
+    name, _, pct = confidence_level(float(result["hsi_spread"]), cfg)
+    sure = {"High": "The 300 advisors inside the model mostly agree, so the clock answer is fairly trustworthy.",
+            "Medium": "The 300 advisors inside the model partly disagree, so the clock answer should be checked carefully.",
+            "Low": "The 300 advisors inside the model disagree a lot, so a tester should search a little around the clock answer."}[name]
+    return (
+        "**Here is what just happened, in plain words.**\n\n"
+        f"You described one **{row['derivative']}** chip. Before any adjustment, its measurements were:\n"
+        f"- its steady voltage ruler (bandgap) reads {row['bg_untrim_V']:.4f} V but should read 1.200 V: {_gap_text('bg', row['bg_untrim_V'])};\n"
+        f"- its built-in clock (HSI) runs at {row['hsi_untrim_MHz']:.3f} MHz but should run at 16: {_gap_text('hsi', row['hsi_untrim_MHz'])};\n"
+        f"- its power regulator (LDO) gives {row['ldo_untrim_V']:.4f} V but should give 1.100 V: {_gap_text('ldo', row['ldo_untrim_V'])}.\n\n"
+        "Each of these three circuits has an adjustment dial. The program worked out where each dial should be set:\n"
+        f"- ruler dial: position **{codes['bg']}** ({clicks('bg')});\n"
+        f"- clock dial: position **{codes['hsi']}** ({clicks('hsi')});\n"
+        f"- power dial: position **{codes['ldo']}** ({clicks('ldo')}).\n\n"
+        f"{sure} A tester would now check these settings once before they are made permanent."
+    )
