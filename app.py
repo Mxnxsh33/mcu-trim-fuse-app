@@ -272,7 +272,7 @@ measurements, so the slow trial-and-error trim search can be replaced by a quick
 </div>
 """)
 
-tab_start, tab_single, tab_chat, tab_batch, tab_fuse, tab_about = st.tabs(["📖  Start here", "🎯  Single die", "🤖  Project assistant", "📁  Batch (CSV)", "🔐  Fuse map", "ℹ️  About the model"])
+tab_single, tab_chat, tab_batch, tab_fuse, tab_about = st.tabs(["🎯  Single die", "🤖  Project assistant", "📁  Batch (CSV)", "🔐  Fuse map", "ℹ️  About the model"])
 
 
 # ---------------------------------------------------------------------------
@@ -738,62 +738,3 @@ with tab_chat:
         st.button("🧹  Clear chat", on_click=clear_chat)
     st.caption("The assistant explains the project. It cannot change the model or its predictions. "
                "Double-check any number you plan to quote against the notebooks.")
-
-
-# ---------------------------------------------------------------------------
-# Tab 0: start here (plain-language tour for anyone)
-# ---------------------------------------------------------------------------
-with tab_start:
-    _kb, _off, simple_all, _off_s = load_assistant()
-    guide = dict(assistant.split_chunks(simple_all))
-    html('<div class="sec"><span class="dot"></span>Start here: what is this app, in plain words?</div>')
-    st.write("Factories make millions of tiny computer chips. Like cookies from the same dough, every chip comes out slightly different, "
-             "so each one needs a small adjustment, a bit like tuning a guitar string. Finding that adjustment by trial and error takes about "
-             "20 tries per chip. This app shows a program that looks at a chip's measurements and tells you the adjustment straight away.")
-    html("""
-    <div class="steps">
-    <div class="step"><div class="n">1</div><br><b>A chip is made</b>
-    <div class="t">Like cookies on a tray, each chip comes out a tiny bit different from the others.</div></div>
-    <div class="step"><div class="n">2</div><br><b>We measure it</b>
-    <div class="t">Three circuits are measured: a steady voltage ruler, a built-in clock and a power regulator. A few "birth certificate" readings say how it was made.</div></div>
-    <div class="step"><div class="n">3</div><br><b>The program predicts the clicks</b>
-    <div class="t">Each circuit has an adjustment dial. A model that studied 8,420 chips says how many clicks each dial needs.</div></div>
-    <div class="step"><div class="n">4</div><br><b>A tester checks once</b>
-    <div class="t">Instead of about 20 trial-and-error steps, the tester only verifies the answer, about 5 checks in our tests.</div></div>
-    <div class="step"><div class="n">5</div><br><b>The setting is made permanent</b>
-    <div class="t">The dial positions are written into tiny one-time switches called fuses, like writing in ink instead of pencil.</div></div>
-    <div class="step"><div class="n">6</div><br><b>A rulebook double-checks</b>
-    <div class="t">A fuse checker reads the permanent settings and warns in plain words about any mistake before it is too late.</div></div>
-    </div>
-    """)
-    with st.container(border=True):
-        html('<div class="sec"><span class="dot"></span>Words in plain English</div>')
-        st.markdown(
-            "| Word | What it means in everyday life |\n|---|---|\n"
-            "| Chip / die | One tiny electronic brain, the size of a fingernail or smaller |\n"
-            "| Wafer / lot | The big disc many chips are made on (like a pizza base) / a batch of discs (like several trays from one oven session) |\n"
-            "| Trimming | The final fine adjustment of a chip, like tuning a guitar |\n"
-            "| Trim code | The click position of an adjustment dial |\n"
-            "| Bandgap | The chip's super-steady voltage ruler |\n"
-            "| HSI oscillator | The chip's built-in clock, like a metronome |\n"
-            "| LDO | A power regulator, like a pressure regulator on a water tap |\n"
-            "| Fuse | A one-time switch that makes a setting permanent |\n"
-            "| Model | The program that learned from examples to predict the clicks |\n"
-            "| Random Forest | 300 simple advisors voting on the answer |\n"
-            "| Within ±1 code | At most one click away from the best answer |\n")
-    with st.container(border=True):
-        html('<div class="sec"><span class="dot"></span>Try it in three clicks</div>')
-        st.markdown("1. Open the **🎯 Single die** tab and pick an example chip from the first dropdown.\n"
-                    "2. Look at the three big numbers: they are the dial positions the program predicts.\n"
-                    "3. Open the **🤔 Do you know what you just did?** drop-down and read the **🟢 Plain words** tab.\n\n"
-                    "Stuck on any word? Open **🤖 Project assistant**: it answers in simple language by default.")
-    hold_hsi = card["holdout_results"]["hsi"]["within_1_%"]
-    fresh_hsi = cfg["fresh_data_check"]["results"]["hsi"]["within_1_%"]
-    st.info(f"**How much can you trust it?** For the voltage ruler and the power regulator the prediction is within one click of the best answer "
-            f"for about 99.9% of chips. For the clock it is about {min(hold_hsi, fresh_hsi):.0f} to {max(hold_hsi, fresh_hsi):.0f}%. "
-            "Everything here uses practice data made by a computer program (not real chips), and a tester must always verify before anything is made permanent.")
-    for title, key in [("🧒  Explain it like I'm ten years old", "Explain it like I am ten years old"),
-                       ("👵  Explain it like I'm talking to my grandmother", "Explain it like I am talking to my grandmother"),
-                       ("⚠️  What are the limits?", "What are the real-world limits of this project?")]:
-        with st.expander(title):
-            st.markdown(guide[key])
